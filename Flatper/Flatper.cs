@@ -87,7 +87,7 @@ namespace Flatper
 
             using (var nw = new NamespaceWriter(flatData.ns, strBldr))
             {
-                nw.WriteUsing("Flatbuffers");
+                nw.WriteUsing("FlatBuffers");
                 nw.WriteUsing(flatData.ns);
 
                 var className = Path.GetFileNameWithoutExtension(flatArgs.outputFolderPath) + "Serializer";
@@ -119,7 +119,7 @@ namespace Flatper
 
             using (var nw = new NamespaceWriter(flatData.ns, strBldr))
             {
-                nw.WriteUsing("Flatbuffers");
+                nw.WriteUsing("FlatBuffers");
                 nw.WriteUsing(flatData.ns);
 
                 var className = Path.GetFileNameWithoutExtension(flatArgs.outputFolderPath) + "Deserializer";
@@ -131,8 +131,8 @@ namespace Flatper
                         var func = string.Format("public static {0}T Deserializer{1}(byte[] buffer)", tableName, tableName);
                         using (var fw = new FuncWriter(func, strBldr))
                         {   
-                            fw.WriteChildCode("var bb = new Byte(buffer);");
-                            fw.WriteChildCode(string.Format("var cc ={0}.GetRootAs{1};", tableName, tableName));
+                            fw.WriteChildCode("var bb = new ByteBuffer(buffer);");
+                            fw.WriteChildCode(string.Format("var cc ={0}.GetRootAs{1}(bb);", tableName, tableName));
                             fw.WriteChildCode("return cc.UnPack();");
                         }
                     }

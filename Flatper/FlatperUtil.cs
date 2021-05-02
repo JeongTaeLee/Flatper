@@ -37,7 +37,7 @@ namespace Flatper
             : base(bldr, idntCnt)
         {
 
-            WriteCode(string.Format("namespace {0};", ns));
+            WriteCode(string.Format("namespace {0}", ns));
             WriteCode("{");
         }
 

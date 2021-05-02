@@ -11,7 +11,7 @@
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/Flatper/bin/Debug/net5.0/Flatper.dll",
-            "args": ["--i", "/Users/ijeongtae/Projects/ProjectFirst/Message/Messages.fbs", "--o", "/Users/ijeongtae/Projects/ProjectFirst/Message"],
+            "args": [ ],
             "cwd": "${workspaceFolder}/Flatper",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
