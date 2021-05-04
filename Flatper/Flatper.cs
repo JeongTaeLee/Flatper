@@ -6,13 +6,16 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
+using System.CodeDom;
+using System.CodeDom.Compiler;
+
 namespace Flatper
 {
     public class Flatper
     {
         public class FlatData
         {
-            public string ns;
+            public string namespaceName;
             public List<string> tableNames = new List<string>();
         }
 
@@ -28,6 +31,9 @@ namespace Flatper
         private static async Task<FlatData> ParseFlatData(string flatFilePath)
         {
             var flatFileText = await File.ReadAllTextAsync(flatFilePath);
+
+            // 주석 제거.
+            
 
             // 개행 문자 제거.            
             flatFileText = flatFileText.Replace('\r', ' ');
@@ -57,7 +63,7 @@ namespace Flatper
                         continue;
                     }
 
-                    flatData.ns = stub;
+                    flatData.namespaceName = stub;
                 }
 
                 if (stub == "table")
@@ -82,67 +88,70 @@ namespace Flatper
 
         private static async Task GenerateSerializer(FlatperArgs flatArgs, FlatData flatData)
         {
-            var strBldr = new StringBuilder();
-            var name = Path.GetFileNameWithoutExtension(flatArgs.outputFolderPath) + "Serializer";
+            var codeRoot = new CodeRoot();
+            codeRoot.AddUsing(flatData.namespaceName)
+                .AddUsing("FlatBuffers")
+                .SetNamespace(flatData.namespaceName);
 
-            using (var nw = new NamespaceWriter(flatData.ns, strBldr))
+            var serializerName = Path.GetFileNameWithoutExtension(flatArgs.inputPath);
+            var className = CodeGeneratorUtil.CreateSerializerName(serializerName);
+
+            var classCode = codeRoot.CreateClass(className)
+                .SetIsStatic(true);
+            
+            foreach (var tableName in flatData.tableNames)
             {
-                nw.WriteUsing("FlatBuffers");
-                nw.WriteUsing(flatData.ns);
+                var methodCode = classCode.CreateMethod($"Serialize{tableName}")
+                    .SetIsStatic(true)
+                    .SetReturnType("byte[]")
+                    .AddParameter($"tb", $"{tableName}T");
 
-                var className = Path.GetFileNameWithoutExtension(flatArgs.outputFolderPath) + "Serializer";
+                methodCode.CreateLine()
+                    .SetCode($"var fbb = new FlatBufferBuild(1);");
+            
+                methodCode.CreateLine()
+                    .SetCode($"fbb.Finish({tableName}.Pack(fbb, tb).Value);");
 
-                using (var cw = new ClassWriter(className, strBldr))
-                {
-                    foreach (var tableName in flatData.tableNames)
-                    {
-                        var func = string.Format("public static byte[] Serializer{0}({1}T flat)", tableName, tableName);
-                        using (var fw = new FuncWriter(func, strBldr))
-                        {   
-                            fw.WriteChildCode("var fbb = new FlatBufferBuilder(1);");
-                            fw.WriteChildCode(string.Format("fbb.Finish({0}.Pack(fbb, flat).Value);", tableName));
-                            fw.WriteChildCode("return fbb.SizedByteArray();");
-                        }
-                    }
-                }
+                methodCode.CreateLine()
+                    .SetCode("return fbb.SizedByteArray();");
             }
 
-            var filePath = Path.Combine(flatArgs.outputFolderPath, $"{name}.cs");
-
-            await File.WriteAllTextAsync(filePath, strBldr.ToString());
+            var savePath = Path.Combine(flatArgs.outputFolderPath, className + ".cs");
+            await File.WriteAllTextAsync(savePath, codeRoot.BuildCode().ToString());
         }
 
         private static async Task GenerateDeserializer(FlatperArgs flatArgs, FlatData flatData)
         {
-            var strBldr = new StringBuilder();
-            var name = Path.GetFileNameWithoutExtension(flatArgs.outputFolderPath) + "Deserializer";
+            var codeRoot = new CodeRoot();
+            codeRoot.AddUsing(flatData.namespaceName)
+                .AddUsing("FlatBuffers")
+                .SetNamespace(flatData.namespaceName);
 
-            using (var nw = new NamespaceWriter(flatData.ns, strBldr))
+            var deserializerName = Path.GetFileNameWithoutExtension(flatArgs.inputPath);
+            var className = CodeGeneratorUtil.CreateDeserializerName(deserializerName);
+
+            var classCode = codeRoot.CreateClass(className)
+                .SetIsStatic(true);
+            
+            foreach (var tableName in flatData.tableNames)
             {
-                nw.WriteUsing("FlatBuffers");
-                nw.WriteUsing(flatData.ns);
+                var methodCode = classCode.CreateMethod($"Deserialize{tableName}")
+                    .SetIsStatic(true)
+                    .SetReturnType($"{tableName}T")
+                    .AddParameter($"buffer", $"byte[]");
 
-                var className = Path.GetFileNameWithoutExtension(flatArgs.outputFolderPath) + "Deserializer";
+                methodCode.CreateLine()
+                    .SetCode($"var bb = new ByteBuffer(buffer);");
+            
+                methodCode.CreateLine()
+                    .SetCode($"var cc = {tableName}.GetRootAs{tableName}(bb);");
 
-                using (var cw = new ClassWriter(className, strBldr))
-                {
-                    foreach (var tableName in flatData.tableNames)
-                    {
-                        var func = string.Format("public static {0}T Deserializer{1}(byte[] buffer)", tableName, tableName);
-                        using (var fw = new FuncWriter(func, strBldr))
-                        {   
-                            fw.WriteChildCode("var bb = new ByteBuffer(buffer);");
-                            fw.WriteChildCode(string.Format("var cc ={0}.GetRootAs{1}(bb);", tableName, tableName));
-                            fw.WriteChildCode("return cc.UnPack();");
-                        }
-                    }
-                }
+                methodCode.CreateLine()
+                    .SetCode("return cc.UnPack();");
             }
 
-            var filePath = Path.Combine(flatArgs.outputFolderPath, $"{name}.cs");
-
-            await File.WriteAllTextAsync(filePath, strBldr.ToString());
+            var savePath = Path.Combine(flatArgs.outputFolderPath, className + ".cs");
+            await File.WriteAllTextAsync(savePath, codeRoot.BuildCode().ToString());
         }
-
     }
 }

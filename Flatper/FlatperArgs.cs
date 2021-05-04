@@ -29,7 +29,6 @@ namespace Flatper
 
         public static FlatperArgs Of(string[] args)
         {
-            var compilerPath = string.Empty;
             var inputPath = string.Empty;
             var outputFolderPath = string.Empty;
             var genOneFile = false;
