@@ -2,29 +2,71 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build",
+            "label": "build - debug",
             "command": "dotnet",
             "type": "process",
             "args": [
                 "build",
                 "${workspaceFolder}/Flatper/Flatper.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "-c", "Release"
             ],
             "problemMatcher": "$msCompile"
         },
+
         {
-            "label": "publish",
+            "label": "build - release",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/Flatper/Flatper.csproj",
+                "-c", "Release"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+
+        {
+            "label": "publish - win-x64",
             "command": "dotnet",
             "type": "process",
             "args": [
                 "publish",
                 "${workspaceFolder}/Flatper/Flatper.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary",
+                "-p:PublishSingleFile=true",
+                "-r", "win-x64",
+                "-c", "Release"
             ],
             "problemMatcher": "$msCompile"
         },
+
+        {
+            "label": "publish - osx-x64",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "publish",
+                "${workspaceFolder}/Flatper/Flatper.csproj",
+                "-p:PublishSingleFile=true",
+                "-r", "osx-x64",
+                "-c", "Release"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+
+        {
+            "label": "publish - osx.11.0-arm64",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "publish",
+                "${workspaceFolder}/Flatper/Flatper.csproj",
+                "-p:PublishSingleFile=true",
+                "-r", "osx.11.0-arm64",
+                "-c", "Release"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+
         {
             "label": "watch",
             "command": "dotnet",
@@ -33,8 +75,6 @@
                 "watch",
                 "run",
                 "${workspaceFolder}/Flatper/Flatper.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
             ],
             "problemMatcher": "$msCompile"
         }

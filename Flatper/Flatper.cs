@@ -1,14 +1,9 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-
-using System.CodeDom;
-using System.CodeDom.Compiler;
-
+using CSGenerator;
 namespace Flatper
 {
     public class Flatper
@@ -107,7 +102,7 @@ namespace Flatper
                     .AddParameter($"tb", $"{tableName}T");
 
                 methodCode.CreateLine()
-                    .SetCode($"var fbb = new FlatBufferBuild(1);");
+                    .SetCode($"var fbb = new FlatBufferBuilder(1);");
             
                 methodCode.CreateLine()
                     .SetCode($"fbb.Finish({tableName}.Pack(fbb, tb).Value);");
