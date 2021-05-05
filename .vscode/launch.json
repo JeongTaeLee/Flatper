@@ -8,13 +8,13 @@
             "name": ".NET Core Launch (console)",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build",
+            "preLaunchTask": "build - debug",
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/Flatper/bin/Debug/net5.0/Flatper.dll",
-            "args": ["--i", "/Users/ijeongtae/Projects/ProjectFirst/Message/Messages.fbs", "--o", "/Users/ijeongtae/Projects/ProjectFirst/Message/"],
+            "args": ["--i", "/Users/ijeongtae/Projects/ProjectFirst/Message/Msg.fbs", "--o", "/Users/ijeongtae/Projects/ProjectFirst/Message/3_Output/", "--c", "/Users/ijeongtae/Projects/ProjectFirst/Message/2_Mac/flatc"],
             "cwd": "${workspaceFolder}/Flatper",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
-            "console": "internalConsole",
+            "console": "integratedTerminal",
             "stopAtEntry": false
         },
         {

@@ -1,93 +1,60 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Flatper
 {
-    public readonly struct FlatperArgs
+    public enum ArgsIdentifier
     {
-        public string inputPath { get; }
-        public string outputFolderPath { get; }
-        public bool genOneFile { get; }
-
-        private FlatperArgs(string inputPath, string outputFolderPath, bool genOneFile)
+        NONE = 0,
+        INPUT,
+        OUTPUT,
+        COMPILER,
+    }
+    
+    public class FlatperArgsFactory
+    {
+        public static IReadOnlyDictionary<string, Action<FlatperArgs, string>> parsers = new Dictionary<string, Action<FlatperArgs, string>>()
         {
-            if (string.IsNullOrEmpty(inputPath))
-            {
-                throw new ArgumentNullException(nameof(inputPath));
-            }
+            //{ArgsIdentifier.NONE, (args, str) => { throw new InvalidOperationException($"Invalid args \'{str}\'"); }},
+            {FlatperConst.ARGS_INPUT_IDENTIFIER, (args, str) => { args.SetInput(str); }},
+            {FlatperConst.ARGS_OUTPUT_IDENTIFIER, (args, str) => { args.SetOutput(str); }},
+            {FlatperConst.ARGS_COMPILER_IDENTIFIER, (args, str) => { args.SetCompiler(str); }},
+        };
 
-            if (string.IsNullOrEmpty(outputFolderPath))
-            {
-                throw new ArgumentNullException(nameof(outputFolderPath));
-            }
-
-            this.inputPath = inputPath;
-            this.outputFolderPath = outputFolderPath;
-            this.genOneFile = genOneFile;
-        }
-
-        public static FlatperArgs Of(string[] args)
+        public static FlatperArgs Create(string[] args)
         {
-            var inputPath = string.Empty;
-            var outputFolderPath = string.Empty;
-            var genOneFile = false;
+            var flatperArgs = new FlatperArgs();
 
             var iter = args.GetEnumerator();
             while (iter.MoveNext())
             {
-                string str = iter.Current as string;
-
-                str = str.ToLower();
-
-                switch (str)
+                var argsIdentifierStr = iter.Current.ToString();
+                if (!parsers.TryGetValue(argsIdentifierStr, out var func))
                 {
-                    case "--i":
-                    {
-                        if (!TryParseOption(iter, out inputPath) || !File.Exists(inputPath))
-                        {
-                            throw new ArgumentException("Invalid flat file path");
-                        }
-                        break;
-                    }
+                    throw new InvalidOperationException($"Invalid args \'{argsIdentifierStr}\'");
+                }
 
-                    case "--o":
-                    {
-                        if (!TryParseOption(iter, out outputFolderPath) || !Directory.Exists(outputFolderPath))
-                        {
-                            throw new ArgumentException("Invalid output folder path");
-                        }
-                        break;
-                    }
-
-                    case "--gen-onefile":
-                    {
-                        genOneFile = true;
-                        break;
-                    }
-
+                if (iter.MoveNext())
+                {
+                    var argStr = iter.Current.ToString();
+                    func?.Invoke(flatperArgs, argStr);
                 }
             }
 
-            return new FlatperArgs( inputPath, outputFolderPath, genOneFile);
-        } 
-
-        private static bool TryParseOption(IEnumerator iter, out string str)
-        {
-            str = string.Empty;
-
-            if (!iter.MoveNext())
-            {
-                return false;
-            }
-
-            str = iter.Current as string;
-            if (string.IsNullOrEmpty(str))
-            {
-                throw new ArgumentException("Invalid CompilerPath");
-            }
-
-            return true;
+            return flatperArgs;
         }
+    }
+
+    public class FlatperArgs
+    {
+        public string input { get; private set; } = string.Empty;
+        public string output { get; private set; } = string.Empty;
+        public string compiler { get; private set; } = string.Empty;
+
+        public void SetInput(string ipt) => input = ipt;
+        public void SetOutput(string otpt) => output = otpt;
+        public void SetCompiler(string cmpilr) => compiler = cmpilr;
     }
 }

@@ -4,11 +4,13 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CSGenerator;
+using System.Diagnostics;
+
 namespace Flatper
 {
     public class Flatper
     {
-        public class FlatData
+        public class ParsedFlatSchema
         {
             public string namespaceName;
             public List<string> tableNames = new List<string>();
@@ -16,19 +18,83 @@ namespace Flatper
 
         public static async Task RunAsync(string[] args)
         {
-            var option = FlatperArgs.Of(args);
+            var flatperArgs = FlatperArgsFactory.Create(args);
 
-            var flatData = await ParseFlatData(option.inputPath);
+            await CompileFlat(flatperArgs);
+
+            var flatData = await ParseFlatSchema(flatperArgs);
             
-            await Task.WhenAll(GenerateSerializer(option, flatData), GenerateDeserializer(option, flatData));
+            await Task.WhenAll(GenerateSerializer(flatperArgs, flatData), GenerateDeserializer(flatperArgs, flatData));
+
+            Console.WriteLine("Done.");
         }
 
-        private static async Task<FlatData> ParseFlatData(string flatFilePath)
+        private static async Task CompileFlat(FlatperArgs args)
         {
-            var flatFileText = await File.ReadAllTextAsync(flatFilePath);
+            var outputFolder = Path.GetFullPath(args.output);
 
-            // 주석 제거.
+            // 파일 체크.
+            var di = new DirectoryInfo(args.output);
+
+            var files = di.GetFiles("*", SearchOption.AllDirectories);
+            var dirs = di.GetDirectories();
+            if (0 < (files.Length + dirs.Length))
+            {
+                Console.WriteLine($"!!주의!! 출력 폴더인 \'{outputFolder}\'에 파일이 존재합니다. 모두 지우고 다시 생성합니다...(아무키나 입력해주세요)");
+                Console.ReadKey();
             
+                Console.WriteLine("========== DELETE OLD FILES & FOLDER ==========");
+                // 모든 파일 제거.
+                if (0 < files.Length)
+                {
+                    foreach (var file in files)
+                    {
+                        file.Delete();
+                        Console.WriteLine($"Delete File - {file.Name}");
+                    }
+                }
+
+                // 모든 폴더 제거.
+                if (0 < dirs.Length)
+                {
+                    foreach (var dir in dirs)
+                    {
+                        dir.Delete(true);
+                        Console.WriteLine($"Delete Folder - {dir.Name}");
+                    }
+                }
+                Console.WriteLine("===============================================");
+                Console.WriteLine("");
+            }
+
+            var compilerArgs = $"--csharp -o {args.output} {args.input}";
+            Console.WriteLine("============ START FLATC COMPILER =============");
+            Console.WriteLine($"EX : {args.compiler} {compilerArgs}");
+            Console.WriteLine("===============================================");
+            Console.WriteLine("");
+
+            var ps = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = args.compiler,
+                    UseShellExecute = true,
+                    Arguments = compilerArgs,
+                }
+            };
+            
+            ps.Start();
+            await ps.WaitForExitAsync();
+            
+            Console.WriteLine("===============================================");
+            Console.WriteLine("");
+        }
+
+        private static async Task<ParsedFlatSchema> ParseFlatSchema(FlatperArgs args)
+        {
+            Console.WriteLine("========== START PARSING FLAT SCHEMA ==========");
+
+            var flatFileText = await File.ReadAllTextAsync(args.input);
 
             // 개행 문자 제거.            
             flatFileText = flatFileText.Replace('\r', ' ');
@@ -38,7 +104,7 @@ namespace Flatper
 
             var stubs = flatFileText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-            var flatData = new FlatData();
+            var flatData = new ParsedFlatSchema();
 
             var iter = stubs.GetEnumerator();
             while (iter.MoveNext())
@@ -59,6 +125,7 @@ namespace Flatper
                     }
 
                     flatData.namespaceName = stub;
+                    Console.WriteLine($"Namepsace parsing done - {flatData.namespaceName}");
                 }
 
                 if (stub == "table")
@@ -74,21 +141,27 @@ namespace Flatper
                         continue;
                     }
 
+                    
                     flatData.tableNames.Add(stub);
+                       Console.WriteLine($"Table parsing done - {flatData.namespaceName}");
                 }
             }
+
+            Console.WriteLine("===============================================");
 
             return flatData;
         }
 
-        private static async Task GenerateSerializer(FlatperArgs flatArgs, FlatData flatData)
+        private static async Task GenerateSerializer(FlatperArgs flatArgs, ParsedFlatSchema flatData)
         {
+            Console.WriteLine("========== Start generate serializer ==========");
+
             var codeRoot = new CodeRoot();
             codeRoot.AddUsing(flatData.namespaceName)
                 .AddUsing("FlatBuffers")
                 .SetNamespace(flatData.namespaceName);
 
-            var serializerName = Path.GetFileNameWithoutExtension(flatArgs.inputPath);
+            var serializerName = Path.GetFileNameWithoutExtension(flatArgs.input);
             var className = CodeGeneratorUtil.CreateSerializerName(serializerName);
 
             var classCode = codeRoot.CreateClass(className)
@@ -96,9 +169,10 @@ namespace Flatper
             
             foreach (var tableName in flatData.tableNames)
             {
-                var methodCode = classCode.CreateMethod($"Serialize{tableName}")
+                var methodCode = classCode.CreateMethod($"Serialize")
                     .SetIsStatic(true)
                     .SetReturnType("byte[]")
+                    .SetExtensionMethod(true)
                     .AddParameter($"tb", $"{tableName}T");
 
                 methodCode.CreateLine()
@@ -111,18 +185,25 @@ namespace Flatper
                     .SetCode("return fbb.SizedByteArray();");
             }
 
-            var savePath = Path.Combine(flatArgs.outputFolderPath, className + ".cs");
+            var savePath = Path.Combine(flatArgs.output, className + ".cs");
             await File.WriteAllTextAsync(savePath, codeRoot.BuildCode().ToString());
+
+            Console.WriteLine($"Generate complete : {savePath}");
+
+            Console.WriteLine("===============================================");
+            Console.WriteLine("");
         }
 
-        private static async Task GenerateDeserializer(FlatperArgs flatArgs, FlatData flatData)
+        private static async Task GenerateDeserializer(FlatperArgs flatArgs, ParsedFlatSchema flatData)
         {
+            Console.WriteLine("========== Start generate Deserializer ==========");
+
             var codeRoot = new CodeRoot();
             codeRoot.AddUsing(flatData.namespaceName)
                 .AddUsing("FlatBuffers")
                 .SetNamespace(flatData.namespaceName);
 
-            var deserializerName = Path.GetFileNameWithoutExtension(flatArgs.inputPath);
+            var deserializerName = Path.GetFileNameWithoutExtension(flatArgs.input);
             var className = CodeGeneratorUtil.CreateDeserializerName(deserializerName);
 
             var classCode = codeRoot.CreateClass(className)
@@ -145,8 +226,13 @@ namespace Flatper
                     .SetCode("return cc.UnPack();");
             }
 
-            var savePath = Path.Combine(flatArgs.outputFolderPath, className + ".cs");
+            var savePath = Path.Combine(flatArgs.output, className + ".cs");
             await File.WriteAllTextAsync(savePath, codeRoot.BuildCode().ToString());
+
+            Console.WriteLine($"Generate complete : {savePath}");
+
+            Console.WriteLine("===============================================");
+            Console.WriteLine("");
         }
     }
 }
