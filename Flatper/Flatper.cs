@@ -143,7 +143,7 @@ namespace Flatper
 
                     
                     flatData.tableNames.Add(stub);
-                       Console.WriteLine($"Table parsing done - {flatData.namespaceName}");
+                       Console.WriteLine($"Table parsing done - {stub}");
                 }
             }
 
