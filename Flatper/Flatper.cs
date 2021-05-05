@@ -67,7 +67,7 @@ namespace Flatper
                 Console.WriteLine("");
             }
 
-            var compilerArgs = $"--csharp -o {args.output} {args.input}";
+            var compilerArgs = $"--gen-object-api --csharp -o {args.output} {args.input}";
             Console.WriteLine("============ START FLATC COMPILER =============");
             Console.WriteLine($"EX : {args.compiler} {compilerArgs}");
             Console.WriteLine("===============================================");

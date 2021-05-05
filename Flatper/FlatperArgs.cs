@@ -30,7 +30,7 @@ namespace Flatper
             var iter = args.GetEnumerator();
             while (iter.MoveNext())
             {
-                var argsIdentifierStr = iter.Current.ToString();
+                var argsIdentifierStr = iter.Current.ToString().ToLower();
                 if (!parsers.TryGetValue(argsIdentifierStr, out var func))
                 {
                     throw new InvalidOperationException($"Invalid args \'{argsIdentifierStr}\'");
