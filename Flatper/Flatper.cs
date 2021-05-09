@@ -23,8 +23,22 @@ namespace Flatper
             await CompileFlat(flatperArgs);
 
             var flatData = await ParseFlatSchema(flatperArgs);
-            
-            await Task.WhenAll(GenerateSerializer(flatperArgs, flatData), GenerateDeserializer(flatperArgs, flatData));
+
+            Task srlzrTask = null;
+            Task DsrlzrTask = null;
+            Task genUnionHelperTask = null;
+
+            if (!flatperArgs.withoutSerializer)
+            {
+                srlzrTask = GenerateSerializer(flatperArgs, flatData);
+            }
+
+            if (!flatperArgs.withoutDeserializer)
+            {
+                DsrlzrTask = GenerateDeserializer(flatperArgs, flatData);
+            }
+
+            await Task.WhenAll(new List<Task> { srlzrTask, DsrlzrTask, genUnionHelperTask });
 
             Console.WriteLine("Done.");
         }

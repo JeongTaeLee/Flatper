@@ -5,14 +5,6 @@ using System.IO;
 
 namespace Flatper
 {
-    public enum ArgsIdentifier
-    {
-        NONE = 0,
-        INPUT,
-        OUTPUT,
-        COMPILER,
-    }
-    
     public class FlatperArgsFactory
     {
         public static IReadOnlyDictionary<string, Action<FlatperArgs, string>> parsers = new Dictionary<string, Action<FlatperArgs, string>>()
@@ -21,6 +13,10 @@ namespace Flatper
             {FlatperConst.ARGS_INPUT_IDENTIFIER, (args, str) => { args.SetInput(str); }},
             {FlatperConst.ARGS_OUTPUT_IDENTIFIER, (args, str) => { args.SetOutput(str); }},
             {FlatperConst.ARGS_COMPILER_IDENTIFIER, (args, str) => { args.SetCompiler(str); }},
+
+
+            {FlatperConst.ARGS_OPTION_WITHOUT_SERIALIZER, (args, str) => { args.SetWithoutSerializer(); }},
+            {FlatperConst.ARGS_OPTION_WITHOUT_DESERIALIZER, (args, str) => { args.SetWithoutDeserializer(); }},
         };
 
         public static FlatperArgs Create(string[] args)
@@ -53,8 +49,13 @@ namespace Flatper
         public string output { get; private set; } = string.Empty;
         public string compiler { get; private set; } = string.Empty;
 
+        public bool withoutSerializer { get; private set; } = false;
+        public bool withoutDeserializer { get; private set; } = false;
+
         public void SetInput(string ipt) => input = ipt;
         public void SetOutput(string otpt) => output = otpt;
         public void SetCompiler(string cmpilr) => compiler = cmpilr;
+        public void SetWithoutSerializer() => withoutSerializer = true;
+        public void SetWithoutDeserializer() => withoutDeserializer = true;
     }
 }

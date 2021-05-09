@@ -6,6 +6,7 @@ namespace Flatper
         public const string ARGS_INPUT_IDENTIFIER = "--i";
         public const string ARGS_OUTPUT_IDENTIFIER ="--o";
 
-        public const string ARGS_GEN_ONE_FILE_IDENTIFIER = "--gen_onefile";
+        public const string ARGS_OPTION_WITHOUT_SERIALIZER = "--without_serializer";
+        public const string ARGS_OPTION_WITHOUT_DESERIALIZER = "--without_deserializer";
     }
 }
