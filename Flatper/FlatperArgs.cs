@@ -14,9 +14,16 @@ namespace Flatper
             {FlatperConst.ARGS_OUTPUT_IDENTIFIER, (args, str) => { args.SetOutput(str); }},
             {FlatperConst.ARGS_COMPILER_IDENTIFIER, (args, str) => { args.SetCompiler(str); }},
 
-
+            {FlatperConst.ARGS_OPTION_GEN_OBJECT_API, (args, str) => { args.SetGenObjectApi(); }},
             {FlatperConst.ARGS_OPTION_WITHOUT_SERIALIZER, (args, str) => { args.SetWithoutSerializer(); }},
             {FlatperConst.ARGS_OPTION_WITHOUT_DESERIALIZER, (args, str) => { args.SetWithoutDeserializer(); }},
+        };
+
+        public static HashSet<string> optionArgs = new HashSet<string>()
+        {
+            FlatperConst.ARGS_OPTION_GEN_OBJECT_API,
+            FlatperConst.ARGS_OPTION_WITHOUT_SERIALIZER,
+            FlatperConst.ARGS_OPTION_WITHOUT_DESERIALIZER,
         };
 
         public static FlatperArgs Create(string[] args)
@@ -32,7 +39,11 @@ namespace Flatper
                     throw new InvalidOperationException($"Invalid args \'{argsIdentifierStr}\'");
                 }
 
-                if (iter.MoveNext())
+                if (optionArgs.Contains(argsIdentifierStr))
+                {
+                    func?.Invoke(flatperArgs, string.Empty);
+                }
+                else if (iter.MoveNext())
                 {
                     var argStr = iter.Current.ToString();
                     func?.Invoke(flatperArgs, argStr);
@@ -49,13 +60,17 @@ namespace Flatper
         public string output { get; private set; } = string.Empty;
         public string compiler { get; private set; } = string.Empty;
 
+        public bool genObjectApi { get; private set; } = false;
         public bool withoutSerializer { get; private set; } = false;
         public bool withoutDeserializer { get; private set; } = false;
 
         public void SetInput(string ipt) => input = ipt;
         public void SetOutput(string otpt) => output = otpt;
         public void SetCompiler(string cmpilr) => compiler = cmpilr;
+
+        public void SetGenObjectApi() => genObjectApi = true;
         public void SetWithoutSerializer() => withoutSerializer = true;
         public void SetWithoutDeserializer() => withoutDeserializer = true;
+        
     }
 }

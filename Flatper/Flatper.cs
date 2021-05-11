@@ -26,7 +26,6 @@ namespace Flatper
 
             Task srlzrTask = null;
             Task DsrlzrTask = null;
-            Task genUnionHelperTask = null;
 
             if (!flatperArgs.withoutSerializer)
             {
@@ -38,7 +37,7 @@ namespace Flatper
                 DsrlzrTask = GenerateDeserializer(flatperArgs, flatData);
             }
 
-            await Task.WhenAll(new List<Task> { srlzrTask, DsrlzrTask, genUnionHelperTask });
+            await Task.WhenAll(new List<Task> { srlzrTask, DsrlzrTask });
 
             Console.WriteLine("Done.");
         }
@@ -81,7 +80,8 @@ namespace Flatper
                 Console.WriteLine("");
             }
 
-            var compilerArgs = $"--gen-object-api --csharp -o {args.output} {args.input}";
+            var compilerArgs = $"{FlatperConst.FLAT_GEN_OBJECT_API} --csharp -o {args.output} {args.input}";
+
             Console.WriteLine("============ START FLATC COMPILER =============");
             Console.WriteLine($"EX : {args.compiler} {compilerArgs}");
             Console.WriteLine("===============================================");
