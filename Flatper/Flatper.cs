@@ -56,14 +56,14 @@ namespace Flatper
                 Console.WriteLine($"!!주의!! 출력 폴더인 \'{outputFolder}\'에 파일이 존재합니다. 모두 지우고 다시 생성합니다...(아무키나 입력해주세요)");
                 Console.ReadKey();
             
-                Console.WriteLine("========== DELETE OLD FILES & FOLDER ==========");
+                Console.WriteLine("--< DELETE OLD FILES & FOLDER >--");
                 // 모든 파일 제거.
                 if (0 < files.Length)
                 {
                     foreach (var file in files)
                     {
                         file.Delete();
-                        Console.WriteLine($"Delete File - {file.Name}");
+                        Console.WriteLine($">Delete File - {file.Name}");
                     }
                 }
 
@@ -73,40 +73,38 @@ namespace Flatper
                     foreach (var dir in dirs)
                     {
                         dir.Delete(true);
-                        Console.WriteLine($"Delete Folder - {dir.Name}");
+                        Console.WriteLine($">Delete Folder - {dir.Name}");
                     }
                 }
-                Console.WriteLine("===============================================");
+                Console.WriteLine("END..");
                 Console.WriteLine("");
             }
 
             var compilerArgs = $"{FlatperConst.FLAT_GEN_OBJECT_API} --csharp -o {args.output} {args.input}";
 
-            Console.WriteLine("============ START FLATC COMPILER =============");
+            Console.WriteLine("--< START FLATC COMPILER >--");
             Console.WriteLine($"EX : {args.compiler} {compilerArgs}");
-            Console.WriteLine("===============================================");
-            Console.WriteLine("");
 
             var ps = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = args.compiler,
-                    UseShellExecute = true,
+                    //UseShellExecute = true,
                     Arguments = compilerArgs,
                 }
             };
             
             ps.Start();
             await ps.WaitForExitAsync();
-            
-            Console.WriteLine("===============================================");
+
+            Console.WriteLine("END..");
             Console.WriteLine("");
         }
 
         private static async Task<ParsedFlatSchema> ParseFlatSchema(FlatperArgs args)
         {
-            Console.WriteLine("========== START PARSING FLAT SCHEMA ==========");
+            Console.WriteLine("--< START PARSING FLAT SCHEMA >--");
 
             var flatFileText = await File.ReadAllTextAsync(args.input);
 
@@ -139,7 +137,7 @@ namespace Flatper
                     }
 
                     flatData.namespaceName = stub;
-                    Console.WriteLine($"Namepsace parsing done - {flatData.namespaceName}");
+                    Console.WriteLine($">Namepsace parsing done - {flatData.namespaceName}");
                 }
 
                 if (stub == "table")
@@ -157,18 +155,19 @@ namespace Flatper
 
                     
                     flatData.tableNames.Add(stub);
-                       Console.WriteLine($"Table parsing done - {stub}");
+                       Console.WriteLine($">Table parsing done - {stub}");
                 }
             }
 
-            Console.WriteLine("===============================================");
+            Console.WriteLine("END..");
+            Console.WriteLine("");
 
             return flatData;
         }
 
         private static async Task GenerateSerializer(FlatperArgs flatArgs, ParsedFlatSchema flatData)
         {
-            Console.WriteLine("========== Start generate serializer ==========");
+            Console.WriteLine("--< Start generate serializer >--");
 
             var codeRoot = new CodeRoot();
             codeRoot.AddUsing(flatData.namespaceName)
@@ -202,15 +201,15 @@ namespace Flatper
             var savePath = Path.Combine(flatArgs.output, className + ".cs");
             await File.WriteAllTextAsync(savePath, codeRoot.BuildCode().ToString());
 
-            Console.WriteLine($"Generate complete : {savePath}");
+            Console.WriteLine($">Generate complete : {savePath}");
 
-            Console.WriteLine("===============================================");
+            Console.WriteLine("END..");
             Console.WriteLine("");
         }
 
         private static async Task GenerateDeserializer(FlatperArgs flatArgs, ParsedFlatSchema flatData)
         {
-            Console.WriteLine("========== Start generate Deserializer ==========");
+            Console.WriteLine("--< Start generate Deserializer >--");
 
             var codeRoot = new CodeRoot();
             codeRoot.AddUsing(flatData.namespaceName)
@@ -243,9 +242,9 @@ namespace Flatper
             var savePath = Path.Combine(flatArgs.output, className + ".cs");
             await File.WriteAllTextAsync(savePath, codeRoot.BuildCode().ToString());
 
-            Console.WriteLine($"Generate complete : {savePath}");
+            Console.WriteLine($">Generate complete : {savePath}");
 
-            Console.WriteLine("===============================================");
+            Console.WriteLine("END..");
             Console.WriteLine("");
         }
     }
